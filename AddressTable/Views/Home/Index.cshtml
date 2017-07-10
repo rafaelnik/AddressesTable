@@ -1,0 +1,193 @@
+﻿
+<div ng-app="addressApp" lang="ru">
+
+    <!-- Подключаем таблицы стилей Bootstrap и Date Range Picker -->
+    <link href="~/Content/bootstrap.css" rel="stylesheet">
+    <link href="~/Content/daterangepicker.css" rel="stylesheet" />
+
+    <!-- Подключаем AngularJS -->
+    <script src="~/Scripts/angular.js"></script>
+    <p>1</p>
+    <p>1</p>
+
+    <!-- Подключаем при инициализации элемента вызываем первую загрузку списка адресов из БД -->
+    <div ng-controller="addressController" ng-init="getAddresses()" class="container">
+
+        <!-- Элемент выбора языка интерфейса и кнопки сброса всех фильтров и сортировок -->
+        <div class="form-group col-lg-3 col-md-3 col-sm-3 col-xs-3">
+            <label for="lang">{{interface.changeInterfaceLangMessage}}</label>
+            <select class="form-control input-sm" ng-model="interface.langSelected" id="lang" ng-change="setInterface(interface.langSelected);" ng-init="interface.langSelected = 'RU'; setInterface(interface.langSelected);">
+                <option value="RU">RU</option>
+                <option value="EN">EN</option>
+            </select>
+            <button class="btn btn-block btn-secondary" ng-click="resetFiltersAndSort(); getAddresses();">{{interface.resetFiltersAndSort}}</button>
+        </div>
+
+        <!-- Таблица с данным из БД -->
+        <table class="table table-bordered table-fixed col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <tr> <!-- Шапка таблицы - 1, по клику - сортировка/обратная сортировка. Отображение иконок направления сортировки по условиям -->
+                <th class="col-lg-2 col-md-2 col-sm-2 col-xs-2" ng-click="sortByClickedCol('Country');">
+                    {{interface.country}}
+                    <span class="glyphicon glyphicon-sort" ng-show="(sortKey != 'Country')"></span> 
+                    <span class="glyphicon glyphicon-arrow-down" ng-show="(sortKey == 'Country') && (reverseSort == true)"></span> 
+                    <span class="glyphicon glyphicon-arrow-up" ng-show="(sortKey == 'Country') && (reverseSort == false)" ></span>
+                </th>
+                <th class="col-lg-2 col-md-2 col-sm-2 col-xs-2" ng-click="sortByClickedCol('City');">
+                    {{interface.city}}
+                    <span class="glyphicon glyphicon-sort" ng-show="(sortKey != 'City')"></span>
+                    <span class="glyphicon glyphicon-arrow-down" ng-show="(sortKey == 'City') && (reverseSort == true)"></span>
+                    <span class="glyphicon glyphicon-arrow-up" ng-show="(sortKey == 'City') && (reverseSort == false)"></span>
+                </th>
+                <th class="col-lg-2 col-md-2 col-sm-2 col-xs-2" ng-click="sortByClickedCol('Street');">
+                    {{interface.street}}
+                    <span class="glyphicon glyphicon-sort" ng-show="(sortKey != 'Street')"></span>
+                    <span class="glyphicon glyphicon-arrow-down" ng-show="(sortKey == 'Street') && (reverseSort == true)"></span>
+                    <span class="glyphicon glyphicon-arrow-up" ng-show="(sortKey == 'Street') && (reverseSort == false)"></span>
+                </th>
+                <th class="col-lg-2 col-md-2 col-sm-2 col-xs-2" ng-click="sortByClickedCol('House');">
+                    {{interface.house}}
+                    <span class="glyphicon glyphicon-sort" ng-show="(sortKey != 'House')"></span>
+                    <span class="glyphicon glyphicon-arrow-down" ng-show="(sortKey == 'House') && (reverseSort == true)"></span>
+                    <span class="glyphicon glyphicon-arrow-up" ng-show="(sortKey == 'House') && (reverseSort == false)"></span>
+                </th>
+                <th class="col-lg-2 col-md-2 col-sm-2 col-xs-2" ng-click="sortByClickedCol('Postcode');">
+                    {{interface.postcode}}
+                    <span class="glyphicon glyphicon-sort" ng-show="(sortKey != 'Postcode')"></span>
+                    <span class="glyphicon glyphicon-arrow-down" ng-show="(sortKey == 'Postcode') && (reverseSort == true)"></span>
+                    <span class="glyphicon glyphicon-arrow-up" ng-show="(sortKey == 'Postcode') && (reverseSort == false)"></span>
+                </th>
+                <th class="col-lg-2 col-md-2 col-sm-2 col-xs-2" ng-click="sortByClickedCol('RecordDate');">
+                    {{interface.recordDate}}
+                    <span class="glyphicon glyphicon-sort" ng-show="(sortKey != 'RecordDate')"></span>
+                    <span class="glyphicon glyphicon-arrow-down" ng-show="(sortKey == 'RecordDate') && (reverseSort == true)"></span>
+                    <span class="glyphicon glyphicon-arrow-up" ng-show="(sortKey == 'RecordDate') && (reverseSort == false)"></span>
+                </th>
+            </tr>
+            <tr> <!-- Шапка таблицы - 2, элементы ввода для фильтров по таблице. Для номера дома и даты записи - форма для ввода диапазона  -->
+                <th>
+                    <input class="form-control input-sm" type="text" ng-change="setTextStyleToAllCollumns(); getAddresses();" ng-model="countryFilter">
+                </th>
+                <th>
+                    <input class="form-control input-sm" type="text" ng-change="setTextStyleToAllCollumns(); getAddresses()" ng-model="cityFilter">
+                </th>
+                <th>
+                    <input class="form-control input-sm" type="text" ng-change="setTextStyleToAllCollumns(); getAddresses()" ng-model="streetFilter">
+                </th>
+                <th>
+                    <input class="form-control input-sm" type="text" data-toggle="modal" data-target="#houseRangeModal" ng-model="houseRange" readonly>
+                    
+                    <!-- Модальное окно вода диапазона номеров домов -->
+                    <div id="houseRangeModal" class="modal fade" role="dialog">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                    <h4 class="modal-title">Задайте диапазон номеров домов:</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <b>От</b>
+                                    <input class="form-control input-sm" maxlength="3" type="text" ng-change="minHouseRange = deleteNotDigits(minHouseRange); houseFilter = null;" ng-model="minHouseRange">
+                                    <b>до </b>
+                                    <input class="form-control input-sm" maxlength="3" type="text" ng-change="maxHouseRange = deleteNotDigits(maxHouseRange); houseFilter = null;" ng-model="maxHouseRange">
+                                    <b>либо введите конкретное значение для поиска:</b>
+                                    <input class="form-control input-sm" maxlength="3" type="text" ng-change="houseFilter = deleteNotDigits(houseFilter); minHouseRange = null; maxHouseRange = null;" ng-model="houseFilter">
+                                    <p></p>
+                                    <button type="button" class="btn btn-default" ng-click="minHouseRange = null; maxHouseRange = null; houseFilter = null; houseRange=''; setTextStyleToAllCollumns(); getAddresses();" data-dismiss="modal">СБРОС</button>
+                                    <button type="button" class="btn btn-default" ng-click="checkMinMaxRange(); setTextStyleToAllCollumns(); getAddresses();" data-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </th>
+                <th>
+                    <input class="form-control input-sm" type="text" ng-change="postcodeFilter = deleteNotDigits(postcodeFilter); setTextStyleToAllCollumns(); getAddresses();" ng-model="postcodeFilter">
+                </th>
+                <th>
+                    <input class="form-control input-sm" type="text" daterange name="daterange" id="daterange" ng-model="dateM">
+                </th>
+            </tr>
+
+            <!-- тело самой таблицы адресов. ...TextStyle - задает цвет шрифта для колонок по которым работает сортировка или фильтрация -->
+            <tr ng-repeat="addr in addresses">
+                <td class="{{countryTextStyle}}">
+                    {{addr.Country}}
+                </td>
+                <td class="{{cityTextStyle}}">
+                    {{addr.City}}
+                </td>
+                <td class="{{streetTextStyle}}">
+                    {{addr.Street}}
+                </td>
+                <td class="{{houseTextStyle}}">
+                    {{addr.House}}
+                </td>
+                <td class="{{postcodeTextStyle}}">
+                    {{addr.Postcode}}
+                </td>
+                <td class="{{recordDateTextStyle}}">
+                    {{addr.RecordDate.substring(6, 19) | date: 'dd/MM/yyyy H:mm'}}
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="6">
+                    <!-- постраничная навигация по таблице возможность перехода +-2 страницы от текущей и вернуться в начало таблицы -->
+                    <ul class="pagination pagination-sm">
+                        <li><a ng-hide="(currentPage - 2) < 1" ng-click="currentPage = 0; getAddresses();">{{interface.goToFirstPage}}</a></li>
+                        <li><a ng-hide="(currentPage - 1) < 1" ng-click="pageBack(2)">{{currentPage - 1}}</a></li>
+                        <li><a ng-hide="(currentPage) < 1" ng-click="pageBack(1)">{{currentPage}}</a></li>
+                        <li class="active"><a ng-hide="numberOfPages == 0">{{currentPage + 1}}</a></li>
+                        <li><a ng-hide="(currentPage + 2) > numberOfPages" ng-click="pageForward(1)">{{currentPage + 2}}</a></li>
+                        <li><a ng-hide="(currentPage + 3) > numberOfPages" ng-click="pageForward(2)">{{currentPage + 3}}</a></li>
+                        <li><a ng-hide="(currentPage + 4) > numberOfPages" ng-click="currentPage = numberOfPages - 1; getAddresses();">{{interface.goToLastPage}}</a></li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <script type="text/javascript">
+        angular.module('addressApp', []);
+    </script>
+
+    <!-- подключение библиотек Javascript и файла с контроллером addressController для таблицы с адресами -->
+    <script src="~/Scripts/jquery-3.1.1.js"></script>
+    <script src="~/Scripts/moment.js"></script>
+    <script src="~/Scripts/daterangepicker.js"></script>
+    <script src="~/Scripts/App/addressController.js"></script>
+
+
+    <script>
+        // определяем в каком элементе у нас будет задаваться диапазон дат
+        $('input[name="daterange"]').daterangepicker({
+            timePicker: true,
+            timePickerIncrement: 30,
+            timePicker24Hour: true,
+            locale: {
+                format: 'DD/MM/YYYY H:mm A'
+            }
+        });
+
+        // обрабатываем нажатие кнопки "apply"
+        $('#daterange').on('apply.daterangepicker', function (ev, picker) {
+            var startDate = picker.startDate.format('YYYY-MM-DD H:mm');
+            var endDate = picker.endDate.format('YYYY-MM-DD H:mm');
+
+            var sc = angular.element(document.querySelector('div[ng-controller="addressController"]')).scope();
+            sc.setDateRange(startDate, endDate); // передаем выбранные значения в контроллер addressController
+            sc.setTextStyleToAllCollumns();
+            sc.getAddresses();
+        });
+
+        // обрабатываем нажатие кнопки "cancel"
+        $('#daterange').on('cancel.daterangepicker', function (ev, picker) {
+            $('#daterange').val('');
+
+            var sc = angular.element(document.querySelector('div[ng-controller="addressController"]')).scope();
+            sc.setDateRange('', '');
+            sc.setTextStyleToAllCollumns();
+            sc.getAddresses();
+        });
+    </script>
+</div>
+
