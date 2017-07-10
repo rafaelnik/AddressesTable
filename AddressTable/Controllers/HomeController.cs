@@ -16,62 +16,17 @@ namespace AddressTable.Controllers
         // GET: Home
         public ActionResult Index()
         {
-            try
-            {
-                IEnumerable<Address> addresses = db.Addresses;
-                ViewBag.Addresses = JsonConvert.SerializeObject(addresses);
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Ошибка при попытке чтения из БД.");
-            }
-
             return View();
         }
 
+
         [HttpGet]
-        public ActionResult GetAddresses()
+        public ActionResult GetAddresses(DateTime? startDate, DateTime? endDate, int currentPage = 0, string countryFilter = "", string cityFilter = "", string streetFilter = "", string postcodeFilter = "", 
+            int houseFilter = 0, int minHouseRange = 0, int maxHouseRange = 0, string sortKey = "", bool reverseSort = false)
         {
-            int currentPage = 0;
-            string countryFilter = "";
-            string cityFilter = "";
-            string streetFilter = "";
-            string postcodeFilter = "";
-
-            int houseFilter = 0;
-            int minHouseRange = 0;
-            int maxHouseRange = 0;
-            DateTime startDate = new DateTime();
-            DateTime endDate = new DateTime();
-
-            string sortKey = "";
-            bool reverseSort = false;
-
             try
             {
-                currentPage = Int32.Parse(Request.Params["currentPage"]);
-                countryFilter = Request.Params["countryFilter"];
-                cityFilter = Request.Params["cityFilter"];
-                streetFilter = Request.Params["streetFilter"];
-                postcodeFilter = Request.Params["postcodeFilter"];
-
-                Int32.TryParse(Request.Params["houseFilter"], out houseFilter);
-                Int32.TryParse(Request.Params["minHouseRange"], out minHouseRange);
-                Int32.TryParse(Request.Params["maxHouseRange"], out maxHouseRange);
-                DateTime.TryParse(Request.Params["startDate"], out startDate);
-                DateTime.TryParse(Request.Params["endDate"], out endDate);
-
-                sortKey = Request.Params["sortKey"];
-                reverseSort = Boolean.Parse(Request.Params["reverseSort"]);
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Ошибка при парсинге данных запроса.");
-            }
-
-            try
-            {
-                IEnumerable<Address> addresses = db.Addresses.OrderBy(p => p.Id);
+                IQueryable<Address> addresses = db.Addresses.OrderBy(p => p.Id);
 
                 switch (sortKey)
                 {
@@ -106,8 +61,8 @@ namespace AddressTable.Controllers
                 if (minHouseRange != 0) addresses = addresses.Where(p => p.House >= minHouseRange);
                 if (maxHouseRange != 0) addresses = addresses.Where(p => p.House <= maxHouseRange);
 
-                if (startDate != new DateTime(1, 1, 1)) addresses = addresses.Where(p => p.RecordDate >= startDate);
-                if (endDate != new DateTime(1, 1, 1)) addresses = addresses.Where(p => p.RecordDate <= endDate);
+                if (startDate != null) addresses = addresses.Where(p => p.RecordDate >= startDate);
+                if (endDate != null) addresses = addresses.Where(p => p.RecordDate <= endDate);
 
                 addresses = addresses.Skip(100 * currentPage);
                 JsonResult res = new JsonResult();
@@ -122,48 +77,12 @@ namespace AddressTable.Controllers
         }
 
         [HttpGet]
-        public int GetNumberOfPages()
+        public int GetNumberOfPages(DateTime? startDate, DateTime? endDate, int currentPage = 0, string countryFilter = "", string cityFilter = "", string streetFilter = "", string postcodeFilter = "",
+            int houseFilter = 0, int minHouseRange = 0, int maxHouseRange = 0, string sortKey = "", bool reverseSort = false)
         {
-            int currentPage = 0;
-            string countryFilter = "";
-            string cityFilter = "";
-            string streetFilter = "";
-            string postcodeFilter = "";
-
-            int houseFilter = 0;
-            int minHouseRange = 0;
-            int maxHouseRange = 0;
-            DateTime startDate = new DateTime();
-            DateTime endDate = new DateTime();
-
-            string sortKey = "";
-            bool reverseSort = false;
-
             try
             {
-                currentPage = Int32.Parse(Request.Params["currentPage"]);
-                countryFilter = Request.Params["countryFilter"];
-                cityFilter = Request.Params["cityFilter"];
-                streetFilter = Request.Params["streetFilter"];
-                postcodeFilter = Request.Params["postcodeFilter"];
-
-                Int32.TryParse(Request.Params["houseFilter"], out houseFilter);
-                Int32.TryParse(Request.Params["minHouseRange"], out minHouseRange);
-                Int32.TryParse(Request.Params["maxHouseRange"], out maxHouseRange);
-                DateTime.TryParse(Request.Params["startDate"], out startDate);
-                DateTime.TryParse(Request.Params["endDate"], out endDate);
-
-                sortKey = Request.Params["sortKey"];
-                reverseSort = Boolean.Parse(Request.Params["reverseSort"]);
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Ошибка при парсинге данных запроса.");
-            }
-
-            try
-            {
-                IEnumerable<Address> addresses = db.Addresses.OrderBy(p => p.Id);
+                IQueryable<Address> addresses = db.Addresses.OrderBy(p => p.Id);
 
                 if ((countryFilter != "") && (countryFilter != null)) addresses = addresses.Where(p => p.Country.Contains(countryFilter));
                 if ((cityFilter != "") && (cityFilter != null)) addresses = addresses.Where(p => p.City.Contains(cityFilter));
@@ -174,8 +93,8 @@ namespace AddressTable.Controllers
                 if (minHouseRange != 0) addresses = addresses.Where(p => p.House >= minHouseRange);
                 if (maxHouseRange != 0) addresses = addresses.Where(p => p.House <= maxHouseRange);
 
-                if (startDate != new DateTime(1, 1, 1)) addresses = addresses.Where(p => p.RecordDate >= startDate);
-                if (endDate != new DateTime(1, 1, 1)) addresses = addresses.Where(p => p.RecordDate <= endDate);
+                if (startDate != null) addresses = addresses.Where(p => p.RecordDate >= startDate);
+                if (endDate != null) addresses = addresses.Where(p => p.RecordDate <= endDate);
 
                 var numberOfAddresses = addresses.Count();
                 int numberOfPages = numberOfAddresses / 100;
