@@ -26,7 +26,7 @@ namespace AddressTable.Tests
         {
             HomeController controller = new HomeController();
 
-            int result = controller.GetNumberOfPages();
+            int result = controller.GetNumberOfPages(new DateTime(2000,1,1), new DateTime(2018,1,1));
 
             Assert.IsNotNull(result);
         }
@@ -36,7 +36,7 @@ namespace AddressTable.Tests
         {
             HomeController controller = new HomeController();
 
-            JsonResult result = controller.GetAddresses() as JsonResult;
+            JsonResult result = controller.GetAddresses(new DateTime(2000, 1, 1), new DateTime(2018, 1, 1)) as JsonResult;
 
             Assert.IsNotNull(result);
         }
